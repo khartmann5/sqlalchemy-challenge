@@ -44,7 +44,8 @@ def welcome():
         f"<a href='/api/v1.0/precipitation'>Precipitation data from last year of data (summarized by date)</a><br/>"
         f"<a href='/api/v1.0/stations'>List of stations</a></br>"
         f"<a href='/api/v1.0/tobs'>Temperature for most active station from last year of data</a></br>"
-        f"<a href='/api/v1.0/date/2015-05-01'>Temperature data starting at May 1 2015</a>"
+        f"<a href='/api/v1.0/date/2015-05-01'>Temperature data starting at May 1 2015</a></br>"
+        f"<a href='/api/v1.0/date/2012-01-01/2015-12-31'>Temperature data from start to end dates</a>"
         )   
 
 @app.route("/api/v1.0/precipitation")
@@ -55,7 +56,7 @@ def names():
     print(Measurement.__table__.columns.keys())
 
     # Query all passengers
-    results = session.query(Measurement.date, func.sum(Measurement.prcp)).filter(Measurement.date >= '2016-08-23').group_by(Measurement.date).all()
+    results = session.query(Measurement.date,Measurement.prcp).filter(Measurement.date >= '2016-08-23').all()
 
     session.close()
    
@@ -75,16 +76,25 @@ def stations():
     session = Session(engine)
 
     # Query all stations from the dataset
-    results = session.query(Station.station).all()
+    sel = [Station.station,Station.name,Station.latitude,Station.longitude,Station.elevation]
+    results = session.query(*sel).all()
 
     session.close()
     
     print(results)
 
-    # Convert list of tuples into normal list
-    all_stations = list(np.ravel(results))
+    # Create a dictionary from the row of data and append to a list
+    stations = []
+    for station,name,latitude,longitude,elevation in results:
+        station_dict = {}
+        station_dict["Station"] = station
+        station_dict["Name"] = name
+        station_dict["Latitude"] = latitude
+        station_dict["Longitude"] = longitude
+        station_dict["Elevation"] = elevation
+        stations.append(station_dict)
 
-    return jsonify(all_stations)
+    return jsonify(stations)
 
 @app.route("/api/v1.0/tobs")
 def tobs():
@@ -92,11 +102,21 @@ def tobs():
     session = Session(engine)
 
     # Query all temp data for most active station from last year of data
-    results = session.query(Measurement.station,Measurement.date,Measurement.prcp).filter(Measurement.date >= '2016-08-23').filter(Measurement.station == "USC00519281").all()
+    results = session.query(Measurement.station,Measurement.date,Measurement.tobs).filter(Measurement.date >= '2016-08-23').\
+        filter(Measurement.station == "USC00519281").all()
 
     session.close()
 
-    return jsonify(results)
+    # Create a dictionary from the row of data and append to a list
+    active_station_temp = []
+    for station,date,tobs in results:
+        active_station_dict = {}
+        active_station_dict["Station"] = station
+        active_station_dict["Date"] = date
+        active_station_dict["Temp"] = tobs
+        active_station_temp.append(active_station_dict)
+
+    return jsonify(active_station_temp)
 
 @app.route("/api/v1.0/date/<value>")
 def startdate(value):
@@ -104,19 +124,43 @@ def startdate(value):
     session = Session(engine)
 
     # Query all passengers
-    results = session.query(Measurement.date,Measurement.tobs).filter(Measurement.date >= value).group_by(Measurement.date).all()
+    results = session.query(func.min(Measurement.tobs), func.max(Measurement.tobs), func.avg(Measurement.tobs)).\
+        filter(Measurement.date >= value).all()
 
     session.close()
    
     # Create a dictionary from the row data and append to a list of data
     start_temp = []
-    for date, tobs in results:
+    for min,max,avg in results:
         start_temp_dict = {}
-        start_temp_dict["date"] = date
-        start_temp_dict["tobs"] = tobs
+        start_temp_dict["min"] = min
+        start_temp_dict["max"] = max
+        start_temp_dict["avg"] = avg
         start_temp.append(start_temp_dict)
 
     return jsonify(start_temp)
+
+@app.route("/api/v1.0/date/<start>/<stop>")
+def daterange(start,stop):
+    # Create our session (link) from Python to the DB
+    session = Session(engine)
+
+    # Query all passengers
+    results = session.query(func.min(Measurement.tobs), func.max(Measurement.tobs), func.avg(Measurement.tobs)).\
+        filter(Measurement.date >= start).filter(Measurement.date <= stop).all()
+
+    session.close()
+   
+    # Create a dictionary from the row data and append to a list of data
+    start_stop_temp = []
+    for min,max,avg in results:
+        start_stop_temp_dict = {}
+        start_stop_temp_dict["min"] = min
+        start_stop_temp_dict["max"] = max
+        start_stop_temp_dict["avg"] = avg
+        start_stop_temp.append(start_stop_temp_dict)
+
+    return jsonify(start_stop_temp)
 
 if __name__ == '__main__':
     app.run(debug=True)
