@@ -41,10 +41,11 @@ def welcome():
     """List all available api routes."""
     return (
         f"Available Routes:<br/>"
-        f"<a href='/api/v1.0/precipitation'>precipitation</a><br/>"
-        f"<a href='/api/v1.0/stations'>stations</a></br>"
-        f"<a href='/api/v1.0/tobs'>temperature</a>")
-        # f"<a href='/api/v1.0/<start>temperature</a>"
+        f"<a href='/api/v1.0/precipitation'>Precipitation data from last year of data (summarized by date)</a><br/>"
+        f"<a href='/api/v1.0/stations'>List of stations</a></br>"
+        f"<a href='/api/v1.0/tobs'>Temperature for most active station from last year of data</a></br>"
+        f"<a href='/api/v1.0/date/2015-05-01'>Temperature data starting at May 1 2015</a>"
+        )   
 
 @app.route("/api/v1.0/precipitation")
 def names():
@@ -96,6 +97,26 @@ def tobs():
     session.close()
 
     return jsonify(results)
+
+@app.route("/api/v1.0/date/<value>")
+def startdate(value):
+    # Create our session (link) from Python to the DB
+    session = Session(engine)
+
+    # Query all passengers
+    results = session.query(Measurement.date,Measurement.tobs).filter(Measurement.date >= value).group_by(Measurement.date).all()
+
+    session.close()
+   
+    # Create a dictionary from the row data and append to a list of data
+    start_temp = []
+    for date, tobs in results:
+        start_temp_dict = {}
+        start_temp_dict["date"] = date
+        start_temp_dict["tobs"] = tobs
+        start_temp.append(start_temp_dict)
+
+    return jsonify(start_temp)
 
 if __name__ == '__main__':
     app.run(debug=True)
