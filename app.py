@@ -54,7 +54,7 @@ def names():
     print(Measurement.__table__.columns.keys())
 
     # Query all passengers
-    results = session.query(Measurement.date,Measurement.prcp).all()
+    results = session.query(Measurement.date, func.sum(Measurement.prcp)).filter(Measurement.date >= '2016-08-23').group_by(Measurement.date).all()
 
     session.close()
    
@@ -67,6 +67,25 @@ def names():
         all_prcp.append(prcp_dict)
 
     return jsonify(all_prcp)
+
+@app.route("/api/v1.0/stations")
+def stations():
+    # Create session from Python to the DB
+    session = Session(engine)
+
+    # Query all stations from the dataset
+    results = session.query(Station.station).all()
+
+    session.close()
+    
+    print(results)
+
+    # Convert list of tuples into normal list
+    all_stations = list(np.ravel(results))
+
+    return jsonify(all_stations)
+
+
 
 if __name__ == '__main__':
     app.run(debug=True)
