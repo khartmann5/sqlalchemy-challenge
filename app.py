@@ -85,7 +85,17 @@ def stations():
 
     return jsonify(all_stations)
 
+@app.route("/api/v1.0/tobs")
+def tobs():
+    # Create session from Python to the DB
+    session = Session(engine)
 
+    # Query all temp data for most active station from last year of data
+    results = session.query(Measurement.station,Measurement.date,Measurement.prcp).filter(Measurement.date >= '2016-08-23').filter(Measurement.station == "USC00519281").all()
+
+    session.close()
+
+    return jsonify(results)
 
 if __name__ == '__main__':
     app.run(debug=True)
