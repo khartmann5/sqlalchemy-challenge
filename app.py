@@ -42,7 +42,8 @@ def welcome():
     return (
         f"Available Routes:<br/>"
         f"<a href='/api/v1.0/precipitation'>Precipitation data from last year of data</a><br/>"
-        f"<a href='/api/v1.0/stations'>Station information</a></br>"
+        f"<a href='/api/v1.0/stations'>List of Stations</a></br>"
+        f"<a href='/api/v1.0/stationinfo'>Station information</a></br>"
         f"<a href='/api/v1.0/tobs'>Temperature for most active station from last year of data</a></br>"
         f"<a href='/api/v1.0/date/2015-05-01'>Temperature data starting at May 1 2015</a></br>"
         f"<a href='/api/v1.0/date/2012-01-01/2015-12-31'>Temperature data from start to end dates</a>"
@@ -75,6 +76,22 @@ def names():
 
 @app.route("/api/v1.0/stations")
 def stations():
+    # Create session from Python to the DB
+    session = Session(engine)
+
+    # Query all stations from the dataset
+    sel = [Station.name]
+    results = session.query(*sel).all()
+
+    session.close()
+
+    # Convert list of tuples into normal list
+    station_results = list(np.ravel(results))
+
+    return jsonify(station_results)
+
+@app.route("/api/v1.0/stationinfo")
+def stationinfo():
     # Create session from Python to the DB
     session = Session(engine)
 
