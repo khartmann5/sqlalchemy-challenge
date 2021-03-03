@@ -6,3 +6,5 @@ Starting with a jupyter notebook I analyzed the data using SQLAlchemy to find th
 
 2. Temperature data from the last year for the most active station
 ![temp_date](Images/temperature.png)
+
+Next, the same dataset was used to design a Flask API based on the queries from the jupyter notebook
