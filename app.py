@@ -41,7 +41,7 @@ def welcome():
     """List all available api routes."""
     return (
         f"Available Routes:<br/>"
-        f"<a href='/api/v1.0/precipitation'>Precipitation data from last year of data</a><br/>"
+        f"<a href='/api/v1.0/precipitation'>Precipitation from last year of data</a><br/>"
         f"<a href='/api/v1.0/stations'>List of Stations</a></br>"
         f"<a href='/api/v1.0/stationinfo'>Station information</a></br>"
         f"<a href='/api/v1.0/tobs'>Temperature for most active station from last year of data</a></br>"
