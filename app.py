@@ -41,8 +41,8 @@ def welcome():
     """List all available api routes."""
     return (
         f"Available Routes:<br/>"
-        f"<a href='/api/v1.0/precipitation'>Precipitation data from last year of data (summarized by date)</a><br/>"
-        f"<a href='/api/v1.0/stations'>List of stations</a></br>"
+        f"<a href='/api/v1.0/precipitation'>Precipitation data from last year of data</a><br/>"
+        f"<a href='/api/v1.0/stations'>Station information</a></br>"
         f"<a href='/api/v1.0/tobs'>Temperature for most active station from last year of data</a></br>"
         f"<a href='/api/v1.0/date/2015-05-01'>Temperature data starting at May 1 2015</a></br>"
         f"<a href='/api/v1.0/date/2012-01-01/2015-12-31'>Temperature data from start to end dates</a>"
@@ -56,7 +56,10 @@ def names():
     print(Measurement.__table__.columns.keys())
 
     # Query all passengers
-    results = session.query(Measurement.date,Measurement.prcp).filter(Measurement.date >= '2016-08-23').all()
+    date = session.query(Measurement.date).order_by(Measurement.date.desc()).first()
+    recent_date = dt.datetime.strptime(date[0],'%Y-%m-%d')
+    query_date = recent_date - dt.timedelta(days=366)
+    results = session.query(Measurement.date,Measurement.prcp).filter(Measurement.date >= query_date).all()
 
     session.close()
    
@@ -102,8 +105,14 @@ def tobs():
     session = Session(engine)
 
     # Query all temp data for most active station from last year of data
-    results = session.query(Measurement.station,Measurement.date,Measurement.tobs).filter(Measurement.date >= '2016-08-23').\
-        filter(Measurement.station == "USC00519281").all()
+    date = session.query(Measurement.date).order_by(Measurement.date.desc()).first()
+    recent_date = dt.datetime.strptime(date[0],'%Y-%m-%d')
+    query_date = recent_date - dt.timedelta(days=366)
+    most_active_station = session.query(Measurement.station).\
+        group_by(Measurement.station).order_by(func.count(Measurement.station).desc()).first()
+    sel = [Measurement.station,Measurement.date,Measurement.tobs]
+    results = session.query(*sel).filter(Measurement.date >= query_date).\
+        filter(Measurement.station == most_active_station[0]).all()
 
     session.close()
 
@@ -124,7 +133,7 @@ def startdate(value):
     session = Session(engine)
 
     # Query all passengers
-    results = session.query(func.min(Measurement.tobs), func.max(Measurement.tobs), func.avg(Measurement.tobs)).\
+    results = session.query(func.min(Measurement.tobs), func.max(Measurement.tobs),func.avg(Measurement.tobs)).\
         filter(Measurement.date >= value).all()
 
     session.close()
