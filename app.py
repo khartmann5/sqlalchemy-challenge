@@ -45,7 +45,7 @@ def welcome():
         f"<a href='/api/v1.0/stations'>List of Stations</a></br>"
         f"<a href='/api/v1.0/stationinfo'>Station information</a></br>"
         f"<a href='/api/v1.0/tobs'>Temperature for most active station from last year of data</a></br>"
-        f"<a href='/api/v1.0/date/2015-05-01'>Temperature data starting at May 1 2015</a></br>"
+        f"<a href='/api/v1.0/date/2015-05-01'>Temperature data with a start date</a></br>"
         f"<a href='/api/v1.0/date/2012-01-01/2015-12-31'>Temperature data from start to end dates</a>"
         )   
 
